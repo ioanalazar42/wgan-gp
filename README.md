@@ -1,1 +1,1 @@
-# wgan-gp
+# wgan face generation with gradient penalty
