@@ -15,24 +15,28 @@ class Critic(nn.Module):
     def __init__(self):
         super(Critic, self).__init__()
 
-        # Input is 3x128x128, output is 64x32x32
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=(6, 6), stride=4, padding=1)
+        # Input is 3x128x128, output is 32x64x64
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=(4, 4), stride=2, padding=1)
+
+        # Input is 32x64x64, output is 64x32x32
+        self.conv2_layernorm = nn.LayerNorm([32, 64, 64])
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=(4, 4), stride=2, padding=1)
 
         # Input is 64x32x32, output is 128x16x16
-        self.conv2_layernorm = nn.LayerNorm([64, 32, 32])
-        self.conv2 = nn.Conv2d(64, 128, kernel_size=(4, 4), stride=2, padding=1)
+        self.conv3_layernorm = nn.LayerNorm([64, 32, 32])
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=(4, 4), stride=2, padding=1)
 
         # Input is 128x16x16, output is 256x8x8
-        self.conv3_layernorm = nn.LayerNorm([128, 16, 16])
-        self.conv3 = nn.Conv2d(128, 256, kernel_size=(4, 4), stride=2, padding=1)
+        self.conv4_layernorm = nn.LayerNorm([128, 16, 16])
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=(4, 4), stride=2, padding=1)
 
         # Input is 256x8x8, output is 512x4x4
-        self.conv4_layernorm = nn.LayerNorm([256, 8, 8])
-        self.conv4 = nn.Conv2d(256, 512, kernel_size=(4, 4), stride=2, padding=1)
+        self.conv5_layernorm = nn.LayerNorm([256, 8, 8])
+        self.conv5 = nn.Conv2d(256, 512, kernel_size=(4, 4), stride=2, padding=1)
 
-        # Input is 512x4x4, output is 1x1x1
-        self.conv5_layernorm = nn.LayerNorm([512, 4, 4])
-        self.conv5 = nn.Conv2d(512, 1, kernel_size=(4, 4), stride=1)
+        # Input is 512*4*4, output is 1
+        self.fc_layernorm = nn.LayerNorm([512 * 4 * 4])
+        self.fc = nn.Linear(512 * 4 * 4, 1)
 
 
     def forward(self, x):
@@ -40,11 +44,10 @@ class Critic(nn.Module):
         x = F.relu(self.conv2(self.conv2_layernorm(x)))
         x = F.relu(self.conv3(self.conv3_layernorm(x)))
         x = F.relu(self.conv4(self.conv4_layernorm(x)))
-        x = self.conv5(self.conv5_layernorm(x))
+        x = F.relu(self.conv5(self.conv5_layernorm(x))).view(-1, 512 * 4 * 4)
+        x = self.fc(self.fc_layernorm(x))
 
-        # Reduce Nx1x1x1 to N.
-        return x.squeeze()
-
+        return x
 
 class Generator(nn.Module):
     '''Takes a 512-dimensional latent space vector and generates a 3x128x128 image.'''

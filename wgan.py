@@ -30,7 +30,10 @@ PARSER.add_argument('--load_generator_model_path')
 PARSER.add_argument('--save_image_dir', default=DEFAULT_IMG_DIR)
 PARSER.add_argument('--save_model_dir', default=DEFAULT_MODEL_DIR)
 PARSER.add_argument('--tensorboard_dir', default=DEFAULT_TENSORBOARD_DIR)
+PARSER.add_argument('--dry_run', default=False, type=bool)
+PARSER.add_argument('--model_save_frequency', default=15, type=int)
 
+PARSER.add_argument('--training_set_size', default=99999999, type=int)
 PARSER.add_argument('--epoch_length', default=100, type=int)
 PARSER.add_argument('--gradient_penalty_factor', default=10, type=float)
 PARSER.add_argument('--learning_rate', default=0.0001, type=float)
@@ -41,9 +44,12 @@ PARSER.add_argument('--num_epochs', default=500, type=int)
 args = PARSER.parse_args()
 
 # create directories for images, tensorboard results and saved models
-os.makedirs(args.save_image_dir)
-os.makedirs(args.tensorboard_dir)
-os.makedirs(args.save_model_dir)
+if not args.dry_run:
+    os.makedirs(args.save_image_dir)
+    os.makedirs(args.tensorboard_dir)
+    os.makedirs(args.save_model_dir)
+else:
+    print('Dry run! Just for testing, data is not saved')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -65,7 +71,7 @@ generator_optimizer = optim.Adam(generator_model.parameters(), lr=args.learning_
 fixed_latent_space_vectors = torch.randn(64, 512, device=device)  # Note: randn is sampling from a normal distribution
 
 # Load and preprocess images:
-images = load_images(args.data_dir)
+images = load_images(args.data_dir, args.training_set_size)
 
 # Set up TensorBoard.
 writer = SummaryWriter(args.tensorboard_dir)
@@ -128,14 +134,27 @@ for epoch in range(args.num_epochs):
 
     print(('Epoch: {} - Critic Loss: {:.6f} - Generator Loss: {:.6f} - Average C(x): {:.6f} - Average C(G(x)): {:.6f} - Time: {:.3f}s')
         .format(epoch, average_critic_loss , average_generator_loss, average_critic_real_performance, average_critic_generated_performance, time_elapsed))
+    
+    # Save the model parameters every  epochs.
+    if (not args.dry_run 
+        and epoch > 0 
+        and (epoch % args.model_save_frequency == 0 or epoch == args.num_epochs - 1)):
+        save_critic_model_path = '{}/critic_{}-{}.pth'.format(args.save_model_dir, EXPERIMENT_ID, epoch)
+        print('\nSaving critic model as "{}"...'.format(save_critic_model_path))
+        torch.save(critic_model.state_dict(), save_critic_model_path)
         
-    # Save images.
-    with torch.no_grad():
-        generated_images = generator_model(fixed_latent_space_vectors).detach()
-    grid_images = torchvision.utils.make_grid(generated_images, padding=2, normalize=True)
-    torchvision.utils.save_image(generated_images, '{}/{}-{}x{}.jpg'.format(args.save_image_dir, epoch, IMG_SIZE, IMG_SIZE), padding=2, normalize=True)
+        save_generator_model_path = '{}/generator_{}-{}.pth'.format(args.save_model_dir, EXPERIMENT_ID, epoch)
+        print('Saving generator model as "{}"...\n'.format(save_generator_model_path,))
+        torch.save(generator_model.state_dict(), save_generator_model_path)
 
-    writer.add_image('training/generated-images', grid_images, epoch)
+    # Save images.
+    if not args.dry_run:
+        with torch.no_grad():
+            generated_images = generator_model(fixed_latent_space_vectors).detach()
+        grid_images = torchvision.utils.make_grid(generated_images, padding=2, normalize=True)
+        torchvision.utils.save_image(generated_images, '{}/{}-{}x{}.jpg'.format(args.save_image_dir, epoch, IMG_SIZE, IMG_SIZE), padding=2, normalize=True)
+
+        writer.add_image('training/generated-images', grid_images, epoch)
     writer.add_scalar('training/generator/loss', average_generator_loss, epoch)
     writer.add_scalar('training/critic/loss', average_critic_loss, epoch)
     writer.add_scalar('training/critic/real-performance', average_critic_real_performance, epoch)
@@ -144,12 +163,3 @@ for epoch in range(args.num_epochs):
 
 print('Finished training!')
 
-save_critic_model_path = '{}/critic_{}.pth'.format(args.save_model_dir, EXPERIMENT_ID)
-print('Saving critic model as "{}"...'.format(save_critic_model_path))
-torch.save(critic_model.state_dict(), save_critic_model_path)
-
-save_generator_model_path = '{}/generator_{}.pth'.format(args.save_model_dir, EXPERIMENT_ID)
-print('Saving generator model as "{}"...'.format(save_generator_model_path,))
-torch.save(generator_model.state_dict(), save_generator_model_path)
-
-print('Saved models.')
