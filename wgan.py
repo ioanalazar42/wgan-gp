@@ -13,13 +13,13 @@ from timeit import default_timer as timer
 from torch.utils.tensorboard import SummaryWriter
 from utils import sample_gradient_l2_norm
 
-EXPERIMENT_ID = int(time.time()) # used to create new directories to save results of individual experiments
-# directories to save resulst of experiments
+EXPERIMENT_ID = int(time.time()) # Used to create new directories to save results of individual experiments.
+# Directories to save results of experiments.
 DEFAULT_IMG_DIR = 'images/{}'.format(EXPERIMENT_ID)
 DEFAULT_TENSORBOARD_DIR = 'tensorboard/{}'.format(EXPERIMENT_ID)
 DEFAULT_MODEL_DIR = 'models/{}'.format(EXPERIMENT_ID)
 
-# this will vary in the ProGAN
+# This will vary in the ProGAN.
 IMG_SIZE = 128
 
 PARSER = argparse.ArgumentParser()
@@ -38,12 +38,12 @@ PARSER.add_argument('--epoch_length', default=100, type=int)
 PARSER.add_argument('--gradient_penalty_factor', default=10, type=float)
 PARSER.add_argument('--learning_rate', default=0.0001, type=float)
 PARSER.add_argument('--mini_batch_size', default=256, type=int)
-PARSER.add_argument('--num_critic_training_steps', default=5, type=int)
+PARSER.add_argument('--num_critic_training_steps', default=2, type=int)
 PARSER.add_argument('--num_epochs', default=500, type=int)
 
 args = PARSER.parse_args()
 
-# create directories for images, tensorboard results and saved models
+# Create directories for images, tensorboard results and saved models.
 if not args.dry_run:
     os.makedirs(args.save_image_dir)
     os.makedirs(args.tensorboard_dir)
@@ -135,7 +135,7 @@ for epoch in range(args.num_epochs):
     print(('Epoch: {} - Critic Loss: {:.6f} - Generator Loss: {:.6f} - Average C(x): {:.6f} - Average C(G(x)): {:.6f} - Time: {:.3f}s')
         .format(epoch, average_critic_loss , average_generator_loss, average_critic_real_performance, average_critic_generated_performance, time_elapsed))
     
-    # Save the model parameters every  epochs.
+    # Save the model parameters every `model_save_frequency` epochs.
     if (not args.dry_run 
         and epoch > 0 
         and (epoch % args.model_save_frequency == 0 or epoch == args.num_epochs - 1)):
@@ -162,4 +162,3 @@ for epoch in range(args.num_epochs):
     writer.add_scalar('training/epoch-duration', time_elapsed, epoch)
 
 print('Finished training!')
-
