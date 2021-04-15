@@ -31,6 +31,7 @@ PARSER.add_argument('--save_model_dir', default=DEFAULT_MODEL_DIR)
 PARSER.add_argument('--tensorboard_dir', default=DEFAULT_TENSORBOARD_DIR)
 PARSER.add_argument('--dry_run', default=False, type=bool)
 PARSER.add_argument('--model_save_frequency', default=15, type=int)
+PARSER.add_argument('--image_save_frequency', default=100, type=int)
 PARSER.add_argument('--training_set_size', default=99999999, type=int)
 PARSER.add_argument('--epoch_length', default=100, type=int)
 PARSER.add_argument('--gradient_penalty_factor', default=10, type=float)
@@ -77,6 +78,8 @@ images = load_images(args.data_dir, args.training_set_size)
 WRITER.add_graph(critic_model, torch.tensor(images[:1], device=device))
 WRITER.add_graph(generator_model, fixed_latent_space_vectors)
 
+total_training_steps = 0
+
 for epoch in range(args.num_epochs):
     start_time = timer()
     
@@ -86,8 +89,10 @@ for epoch in range(args.num_epochs):
     average_critic_loss = 0.0
     average_generator_loss = 0.0
 
-    # Train: perform `args.epoch_length` mini-batch updates per "epoch".
+    # Train: perform 'args.epoch_length' mini-batch updates per "epoch".
     for i in range(args.epoch_length):
+        total_training_steps += 1
+
         # Train the critic:
         for i in range(args.num_critic_training_steps):
             critic_model.zero_grad()
@@ -107,7 +112,7 @@ for epoch in range(args.num_epochs):
             gradient_l2_norm = sample_gradient_l2_norm(critic_model, real_images, generated_images, device)
             
             # Update the weights.
-            loss = torch.mean(generated_scores) - torch.mean(real_scores) + args.gradient_penalty_factor * gradient_l2_norm  # The critic's goal is for `generated_scores` to be small and `real_scores` to be big.
+            loss = torch.mean(generated_scores) - torch.mean(real_scores) + args.gradient_penalty_factor * gradient_l2_norm  # The critic's goal is for 'generated_scores' to be small and 'real_scores' to be big.
             loss.backward()
             critic_optimizer.step()
 
@@ -121,13 +126,24 @@ for epoch in range(args.num_epochs):
         generated_scores = critic_model(generated_images)
 
         # Update the weights.
-        loss = -torch.mean(generated_scores)  # The generator's goal is for `generated_scores` to be big.
+        loss = -torch.mean(generated_scores)  # The generator's goal is for 'generated_scores' to be big.
         loss.backward()
         generator_optimizer.step()
 
         # Record some statistics.
         average_generator_loss += loss.item() / args.epoch_length
- 
+
+        # Save generated images every 'image_save_frequency' training steps. If 'image_save_frequency' == 'epoch_length', images saved every epoch.
+        if (not args.dry_run and total_training_steps % args.image_save_frequency == 0):
+
+            # Save generated images.
+            with torch.no_grad():
+                generated_images = generator_model(fixed_latent_space_vectors).detach()
+            torchvision.utils.save_image(generated_images, f'{args.save_image_dir}/{total_training_steps:05d}-{IMG_SIZE}x{IMG_SIZE}-{epoch}.jpg', padding=2, normalize=True)
+            
+            # Create a grid of generated images to save to Tensorboard.
+            grid_images = torchvision.utils.make_grid(generated_images, padding=2, normalize=True)
+
     # Record time elapsed for current epoch.
     time_elapsed = timer() - start_time
 
@@ -142,13 +158,6 @@ for epoch in range(args.num_epochs):
     
     # Save model parameters, tensorboard data, generated images.
     if (not args.dry_run):
-        # Save generated images.
-        with torch.no_grad():
-            generated_images = generator_model(fixed_latent_space_vectors).detach()
-        torchvision.utils.save_image(generated_images, f'{args.save_image_dir}/{epoch}-{IMG_SIZE}x{IMG_SIZE}.jpg', padding=2, normalize=True)
-        
-        # Create a grid of generated images to save to Tensorboard.
-        grid_images = torchvision.utils.make_grid(generated_images, padding=2, normalize=True)
 
         # Save tensorboard data.
         WRITER.add_image('training/generated-images', grid_images, epoch)
