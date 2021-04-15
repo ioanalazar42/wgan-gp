@@ -16,9 +16,9 @@ from utils import sample_gradient_l2_norm
 # Define constants.
 EXPERIMENT_ID = int(time.time()) # Used to create new directories to save results of individual experiments.
 
-DEFAULT_IMG_DIR = 'images/{}'.format(EXPERIMENT_ID)
-DEFAULT_TENSORBOARD_DIR = 'tensorboard/{}'.format(EXPERIMENT_ID)
-DEFAULT_MODEL_DIR = 'models/{}'.format(EXPERIMENT_ID)
+DEFAULT_IMG_DIR = f'images/{EXPERIMENT_ID}'
+DEFAULT_TENSORBOARD_DIR = f'tensorboard/{EXPERIMENT_ID}'
+DEFAULT_MODEL_DIR = f'models/{EXPERIMENT_ID}'
 IMG_SIZE = 128
 
 PARSER = argparse.ArgumentParser()
@@ -131,15 +131,21 @@ for epoch in range(args.num_epochs):
     # Record time elapsed for current epoch.
     time_elapsed = timer() - start_time
 
-    print(('Epoch: {} - Critic Loss: {:.6f} - Generator Loss: {:.6f} - Average C(x): {:.6f} - Average C(G(x)): {:.6f} - Time: {:.3f}s')
-        .format(epoch, average_critic_loss , average_generator_loss, average_critic_real_performance, average_critic_generated_performance, time_elapsed))
+    # Print some statistics.
+    print(f'{epoch:3} | '
+          f'Loss(C): {average_critic_loss:.6f} | '
+          f'Loss(G): {average_generator_loss:.6f} | '
+          f'Avg C(x): {average_critic_real_performance:.6f} | '
+          f'Avg C(G(x)): {average_critic_generated_performance:.6f} | '
+          f'C(x) - C(G(x)): {discernability_score:.6f} | '
+          f'Time: {time_elapsed:.3f}s')
     
     # Save model parameters, tensorboard data, generated images.
     if (not args.dry_run):
         # Save generated images.
         with torch.no_grad():
             generated_images = generator_model(fixed_latent_space_vectors).detach()
-        torchvision.utils.save_image(generated_images, '{}/{}-{}x{}.jpg'.format(args.save_image_dir, epoch, IMG_SIZE, IMG_SIZE), padding=2, normalize=True)
+        torchvision.utils.save_image(generated_images, f'{args.save_image_dir}/{epoch}-{IMG_SIZE}x{IMG_SIZE}.jpg', padding=2, normalize=True)
         
         # Create a grid of generated images to save to Tensorboard.
         grid_images = torchvision.utils.make_grid(generated_images, padding=2, normalize=True)
@@ -155,12 +161,12 @@ for epoch in range(args.num_epochs):
         # Save the model parameters at a specified interval.
         if (epoch > 0 and (epoch % args.model_save_frequency == 0
             or epoch == args.num_epochs - 1)):
-            save_critic_model_path = '{}/critic_{}-{}.pth'.format(args.save_model_dir, EXPERIMENT_ID, epoch)
-            print('\nSaving critic model as "{}"...'.format(save_critic_model_path))
+            save_critic_model_path = f'{args.save_model_dir}/critic_{EXPERIMENT_ID}-{epoch}.pth'
+            print(f'\nSaving critic model as "{save_critic_model_path}"...')
             torch.save(critic_model.state_dict(), save_critic_model_path)
         
-            save_generator_model_path = '{}/generator_{}-{}.pth'.format(args.save_model_dir, EXPERIMENT_ID, epoch)
-            print('Saving generator model as "{}"...\n'.format(save_generator_model_path,))
+            save_generator_model_path = f'{args.save_model_dir}/generator_{EXPERIMENT_ID}-{epoch}.pth'
+            print(f'Saving generator model as "{save_generator_model_path}"...\n')
             torch.save(generator_model.state_dict(), save_generator_model_path)
 
 print('Finished training!')
