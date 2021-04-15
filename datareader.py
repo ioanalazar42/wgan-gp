@@ -28,7 +28,6 @@ def _load_image(path):
 
     if image.ndim == 2:
         # Convert grayscale images to RGB
-        # (yes you can actually save a JPEG without RGB info (so like 500x500 instead of 500x500x3), *mind blown*)
         print('Image "{}" is grayscale!'.format(path))
         image = np.dstack([image, image, image])
 
