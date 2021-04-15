@@ -14,6 +14,7 @@ from timeit import default_timer as timer
 from torch.utils.tensorboard import SummaryWriter
 from utils import sample_gradient_l2_norm
 
+
 # Define constants.
 EXPERIMENT_ID = int(time.time()) # Used to create new directories to save results of individual experiments.
 IMG_SIZE = 128

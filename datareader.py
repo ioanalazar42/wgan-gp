@@ -16,22 +16,18 @@ def _center_crop_image(image):
 
     return image[y : crop_size, x : crop_size]
 
-
 def _resize_image(image, width, height):
     return transform.resize(image, [height, width, 3], anti_aliasing=True, mode='constant')
-
 
 def _mean_normalize(image):
     '''Takes an image with float values between [0, 1] and normalizes it to [-1, 1]'''
     return 2 * image - 1
-
 
 def _load_image(path):
     image = io.imread(path)
 
     if image.ndim == 2:
         # Convert grayscale images to RGB
-        # (yes you can actually save a JPEG without RGB info (so like 500x500 instead of 500x500x3), *mind blown*)
         print('Image "{}" is grayscale!'.format(path))
         image = np.dstack([image, image, image])
 
@@ -39,7 +35,6 @@ def _load_image(path):
 
     # Change the 128x128x3 image to 3x128x128 as expected by PyTorch.
     return image.transpose(2, 0, 1)
-
 
 def load_images(dir_path, training_set_size):
     file_names = os.listdir(dir_path)[:training_set_size]
