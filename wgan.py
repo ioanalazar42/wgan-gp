@@ -24,7 +24,7 @@ SAVE_MODEL_DIR = f'{EXPERIMENT_DIR}/models'
 
 PARSER = argparse.ArgumentParser()
 
-PARSER.add_argument('--data_dir', default='/home/datasets/celeba-aligned')
+PARSER.add_argument('--data_dir', default='/home/datasets/celeba-aligned/original')
 PARSER.add_argument('--load_critic_model_path')
 PARSER.add_argument('--load_generator_model_path')
 PARSER.add_argument('--save_image_dir', default=SAVE_IMAGE_DIR)
@@ -123,6 +123,7 @@ for epoch in range(args.num_epochs):
             average_critic_loss += loss.item() / args.num_critic_training_steps / args.epoch_length
             average_critic_real_performance += real_scores.mean().item() / args.num_critic_training_steps / args.epoch_length
             average_critic_generated_performance += generated_scores.mean().item() / args.num_critic_training_steps / args.epoch_length
+            discernability_score = average_critic_real_performance - average_critic_generated_performance # Measure how different generated images are from real images. This should trend towards 0 as fake images become indistinguishable from real ones to the critic.
 
         # Train the generator:
         generator_model.zero_grad()
@@ -168,6 +169,7 @@ for epoch in range(args.num_epochs):
         WRITER.add_scalar('training/critic/loss', average_critic_loss, epoch)
         WRITER.add_scalar('training/critic/real-performance', average_critic_real_performance, epoch)
         WRITER.add_scalar('training/critic/generated-performance', average_critic_generated_performance, epoch)
+        WRITER.add_scalar('training/discernability-score', discernability_score, epoch)
         WRITER.add_scalar('training/epoch-duration', time_elapsed, epoch)
 
         # Save the model parameters at a specified interval.
