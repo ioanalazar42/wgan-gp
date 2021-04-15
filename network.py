@@ -4,10 +4,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 def _upsample(x):
     '''Changes a [N, Depth, Height, Width] tensor to [N, Depth, 2 * Height, 2 * Width].'''
 
     return F.interpolate(x, scale_factor=2, mode='nearest')
+
 
 class Critic(nn.Module):
     '''Takes a 3x128x128 image and returns a big number if the image is real, or a small number if the image is generated.'''
