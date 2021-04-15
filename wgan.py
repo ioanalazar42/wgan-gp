@@ -149,7 +149,7 @@ for epoch in range(args.num_epochs):
             # Save generated images.
             with torch.no_grad():
                 generated_images = generator_model(fixed_latent_space_vectors).detach()
-            torchvision.utils.save_image(generated_images, f'{args.save_image_dir}/{total_training_steps:05d}-{IMG_SIZE}x{IMG_SIZE}-{epoch}.jpg', padding=2, normalize=True)
+            torchvision.utils.save_image(generated_images, f'{args.save_image_dir}/{total_training_steps:03d}-{IMG_SIZE}x{IMG_SIZE}-{epoch}.jpg', padding=2, normalize=True)
             
             # Create a grid of generated images to save to Tensorboard.
             grid_images = torchvision.utils.make_grid(generated_images, padding=2, normalize=True)
