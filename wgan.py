@@ -13,13 +13,12 @@ from timeit import default_timer as timer
 from torch.utils.tensorboard import SummaryWriter
 from utils import sample_gradient_l2_norm
 
+# Define constants.
 EXPERIMENT_ID = int(time.time()) # Used to create new directories to save results of individual experiments.
-# Directories to save results of experiments.
+
 DEFAULT_IMG_DIR = 'images/{}'.format(EXPERIMENT_ID)
 DEFAULT_TENSORBOARD_DIR = 'tensorboard/{}'.format(EXPERIMENT_ID)
 DEFAULT_MODEL_DIR = 'models/{}'.format(EXPERIMENT_ID)
-
-# This will vary in the ProGAN.
 IMG_SIZE = 128
 
 PARSER = argparse.ArgumentParser()
@@ -32,7 +31,6 @@ PARSER.add_argument('--save_model_dir', default=DEFAULT_MODEL_DIR)
 PARSER.add_argument('--tensorboard_dir', default=DEFAULT_TENSORBOARD_DIR)
 PARSER.add_argument('--dry_run', default=False, type=bool)
 PARSER.add_argument('--model_save_frequency', default=15, type=int)
-
 PARSER.add_argument('--training_set_size', default=99999999, type=int)
 PARSER.add_argument('--epoch_length', default=100, type=int)
 PARSER.add_argument('--gradient_penalty_factor', default=10, type=float)
@@ -57,6 +55,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 critic_model = Critic().to(device)
 generator_model = Generator().to(device)
 
+# Load pre-trained models if they are provided.
 if args.load_critic_model_path:
     critic_model.load_state_dict(torch.load(args.load_critic_model_path))
 
@@ -68,9 +67,9 @@ critic_optimizer = optim.Adam(critic_model.parameters(), lr=args.learning_rate, 
 generator_optimizer = optim.Adam(generator_model.parameters(), lr=args.learning_rate, betas=(0, 0.9))
 
 # Create a random batch of latent space vectors that will be used to visualize the progression of the generator.
-fixed_latent_space_vectors = torch.randn(64, 512, device=device)  # Note: randn is sampling from a normal distribution
+fixed_latent_space_vectors = torch.randn(64, 512, device=device)
 
-# Load and preprocess images:
+# Load and preprocess images.
 images = load_images(args.data_dir, args.training_set_size)
 
 # Set up TensorBoard.
@@ -103,12 +102,12 @@ for epoch in range(args.num_epochs):
             random_latent_space_vectors = torch.randn(args.mini_batch_size, 512, device=device)
             generated_images = generator_model(random_latent_space_vectors)
 
-            generated_scores = critic_model(generated_images.detach()) # TODO: Why exactly is `.detach` required?
+            generated_scores = critic_model(generated_images.detach())
 
             gradient_l2_norm = sample_gradient_l2_norm(critic_model, real_images, generated_images, device)
             
             # Update the weights.
-            loss = torch.mean(generated_scores) - torch.mean(real_scores) + args.gradient_penalty_factor * gradient_l2_norm  # The critic's goal is for `generated_scores` to be small and `real_scores` to be big. I don't know why we had to overcomplicate things and call this "Wasserstein".
+            loss = torch.mean(generated_scores) - torch.mean(real_scores) + args.gradient_penalty_factor * gradient_l2_norm  # The critic's goal is for `generated_scores` to be small and `real_scores` to be big.
             loss.backward()
             critic_optimizer.step()
 
@@ -129,7 +128,7 @@ for epoch in range(args.num_epochs):
         # Record some statistics.
         average_generator_loss += loss.item() / args.epoch_length
  
-    # Record statistics.
+    # Record time elapsed for current epoch.
     time_elapsed = timer() - start_time
 
     print(('Epoch: {} - Critic Loss: {:.6f} - Generator Loss: {:.6f} - Average C(x): {:.6f} - Average C(G(x)): {:.6f} - Time: {:.3f}s')
