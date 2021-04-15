@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import os
+import shutil
 import time
 import torch
 import torch.nn as nn
@@ -82,8 +83,9 @@ fixed_latent_space_vectors = torch.tensor(random_values, device=DEVICE)
 images = load_images(args.data_dir, args.training_set_size)
 
 # Add network architectures for Critic and Generator to TensorBoard.
-WRITER.add_graph(critic_model, torch.tensor(images[:1], device=DEVICE))
-WRITER.add_graph(generator_model, fixed_latent_space_vectors)
+if not args.dry_run:
+    WRITER.add_graph(critic_model, torch.tensor(images[:1], device=DEVICE))
+    WRITER.add_graph(generator_model, fixed_latent_space_vectors)
 
 total_training_steps = 0
 
