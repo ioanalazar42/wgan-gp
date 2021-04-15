@@ -15,20 +15,21 @@ from utils import sample_gradient_l2_norm
 
 # Define constants.
 EXPERIMENT_ID = int(time.time()) # Used to create new directories to save results of individual experiments.
-
-DEFAULT_IMG_DIR = f'images/{EXPERIMENT_ID}'
-DEFAULT_TENSORBOARD_DIR = f'tensorboard/{EXPERIMENT_ID}'
-DEFAULT_MODEL_DIR = f'models/{EXPERIMENT_ID}'
 IMG_SIZE = 128
+
+EXPERIMENT_DIR = f'experiments/{EXPERIMENT_ID}'
+SAVE_IMAGE_DIR = f'{EXPERIMENT_DIR}/images'
+TENSORBOARD_DIR = f'{EXPERIMENT_DIR}/tensorboard'
+SAVE_MODEL_DIR = f'{EXPERIMENT_DIR}/models'
 
 PARSER = argparse.ArgumentParser()
 
 PARSER.add_argument('--data_dir', default='/home/datasets/celeba-aligned')
 PARSER.add_argument('--load_critic_model_path')
 PARSER.add_argument('--load_generator_model_path')
-PARSER.add_argument('--save_image_dir', default=DEFAULT_IMG_DIR)
-PARSER.add_argument('--save_model_dir', default=DEFAULT_MODEL_DIR)
-PARSER.add_argument('--tensorboard_dir', default=DEFAULT_TENSORBOARD_DIR)
+PARSER.add_argument('--save_image_dir', default=SAVE_IMAGE_DIR)
+PARSER.add_argument('--save_model_dir', default=SAVE_MODEL_DIR)
+PARSER.add_argument('--tensorboard_dir', default=TENSORBOARD_DIR)
 PARSER.add_argument('--dry_run', default=False, type=bool)
 PARSER.add_argument('--model_save_frequency', default=15, type=int)
 PARSER.add_argument('--image_save_frequency', default=100, type=int)
@@ -44,6 +45,8 @@ args = PARSER.parse_args()
 
 # Create directories for images, tensorboard results and saved models.
 if not args.dry_run:
+    if not os.path.exists(EXPERIMENT_DIR):
+        os.makedirs(EXPERIMENT_DIR) # Set up root experiment directory.
     os.makedirs(args.save_image_dir)
     os.makedirs(args.tensorboard_dir)
     os.makedirs(args.save_model_dir)
