@@ -20,10 +20,10 @@ IMAGE_DIR_PATH = 'generated_with_preloaded_models/1x1'
 PARSER = argparse.ArgumentParser()
 PARSER.add_argument('--model_file_name',
                     default='critic.pth',
-                    help='The file name of a trained model.')
+                    help='The file name of a trained model')
 PARSER.add_argument('--image_path',
                     default=f'random',
-                    help='The path to an image.')
+                    help='The path to an image. If "random", it will pick a random image inside of {IMAGE_DIR_PATH}"')
 args = PARSER.parse_args()
 
 MODEL_PATH = f'trained_models/{args.model_file_name}'
@@ -32,7 +32,7 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # Set up pretrained Critic.
 critic_model = Critic().to(DEVICE)
 
-critic_model.load_state_dict(torch.load(MODEL_PATH))
+critic_model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
 critic_model.eval()
 print(f'\nLoaded model "{MODEL_PATH}"')
 

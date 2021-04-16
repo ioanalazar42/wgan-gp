@@ -38,7 +38,7 @@ IMAGE_NUM_SO_FAR = len(os.listdir(SAVE_IMAGE_DIR))
 
 generator_model = Generator().to(DEVICE)
 
-generator_model.load_state_dict(torch.load(MODEL_PATH))
+generator_model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
 generator_model.eval()
 print(f'Loaded model "{MODEL_PATH}"')
 
