@@ -1,2 +1,6 @@
-__pycache__/
+old_experiments/
 experiments/
+trained_models/
+interpolate/
+generated_with_preloaded_models/
+__pycache__/
