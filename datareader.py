@@ -14,7 +14,7 @@ def _center_crop_image(image):
     y = int((height - crop_size) / 2)
     x = int((width - crop_size) / 2)
 
-    return image[y : crop_size, x : crop_size]
+    return image[y : y + crop_size, x : x + crop_size]
 
 def _resize_image(image, width, height):
     return transform.resize(image, [height, width, 3], anti_aliasing=True, mode='constant')
